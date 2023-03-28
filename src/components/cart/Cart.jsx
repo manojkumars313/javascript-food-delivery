@@ -1,0 +1,184 @@
+import React, { useContext, useEffect, useState } from "react";
+import "./cart.css";
+import Table from "react-bootstrap/Table";
+import Button from "react-bootstrap/Button";
+import { CartContext } from "../../App";
+
+const Cart = () => {
+  const [cart, setCart] = useContext(CartContext);
+
+  const [noOfItems, setNoOfItems] = useState(0);
+  const [cartTotal, setCartTotal] = useState(0);
+
+  const [toPay, setToPay] = useState(0);
+
+  const removeFromCart = (item) => {
+    const newCart = cart.filter((c) => c.code !== item.code);
+    localStorage.setItem("food_cart", JSON.stringify(newCart));
+    let data = JSON.parse(localStorage.getItem("food_cart"));
+    setCart(data);
+    console.log(newCart);
+  };
+
+  const increaseQuantity = (item) => {
+    let pickExistingItem = cart.filter((c) => c.code === item.code);
+
+    if (pickExistingItem.length !== 0) {
+      pickExistingItem.map((i) => (i.quantity += 1));
+
+      localStorage.setItem("food_cart", JSON.stringify(cart));
+      let newCart = JSON.parse(localStorage.getItem("food_cart"));
+      setCart(newCart);
+    }
+  };
+
+  const decreaseQuantity = (item) => {
+    console.log(item);
+    let pickExistingItem = cart.filter((c) => c.code === item.code);
+
+    if (pickExistingItem.length !== 0) {
+      pickExistingItem.map((i) => (i.quantity -= 1));
+
+      localStorage.setItem("food_cart", JSON.stringify(cart));
+      let newCart = JSON.parse(localStorage.getItem("food_cart"));
+      setCart(newCart);
+    }
+  };
+
+  useEffect(() => {
+    console.log(cart);
+
+    function total(cart) {
+      let cartCopy = [...cart];
+      let quantityTotal = 0;
+      let priceTotal = 0;
+      if (cartCopy.length !== 0) {
+        for (let item of cartCopy) {
+          quantityTotal += item.quantity;
+          priceTotal += item.quantity * item.price;
+          console.log(item);
+        }
+        console.log("Total", quantityTotal);
+        setNoOfItems(quantityTotal);
+        setCartTotal(priceTotal);
+      }
+    }
+
+    total(cart);
+  }, [cart, cartTotal, noOfItems]);
+
+  useEffect(() => {
+    let sum = cartTotal + cartTotal * 0.03;
+    setToPay(sum.toFixed(2));
+  }, [cartTotal]);
+
+  if (cart.length === 0)
+    return (
+      <div class="card" style={{ maxWidth: "fit-content", margin: "auto" }}>
+        <div class="card-body">It seems no item added for the hunger 🫡.</div>
+      </div>
+    );
+
+  return (
+    <div className="cart__container">
+      <h5 className="cart__container__title">Cart</h5>
+
+      <section className="container-grid">
+        <main>
+          <Table bordered className="table">
+            <caption>List of items</caption>
+            <thead>
+              <tr>
+                <th></th>
+                <th colSpan={1}>Item</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Price</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody className="table-body">
+              {cart.map((item, index) => (
+                <tr key={index}>
+                  <td>{index + 1}</td>
+
+                  <td style={{ textAlign: "left" }}>{item.name}</td>
+                  <td style={{ fontSize: "20px" }}>
+                    <Button
+                      disabled={item.quantity <= 1 ? true : false}
+                      onClick={() => decreaseQuantity(item)}
+                      variant="outline-secondary"
+                      size="sm"
+                      style={{ padding: "1px 8px" }}
+                    >
+                      -
+                    </Button>
+                    <span style={{ padding: "5px" }}>
+                      {item.quantity ? item.quantity : 0}
+                    </span>
+                    <Button
+                      onClick={() => increaseQuantity(item)}
+                      variant="outline-secondary"
+                      size="sm"
+                      style={{ padding: "1px 6px" }}
+                    >
+                      +
+                    </Button>
+                  </td>
+                  <td>{item.price}</td>
+                  <td>{item.price * item.quantity}</td>
+                  <td>
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={() => removeFromCart(item)}
+                      style={{ padding: "1px 6px" }}
+                    >
+                      X
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </main>
+
+        <aside className="cart-totals">
+          <h5>Bill Details</h5>
+          <Table>
+            <tbody>
+              <tr>
+                <td>Number Of Items</td>
+                <td>{cart.length}</td>
+              </tr>
+              <tr>
+                <td>Total Quanity</td>
+                <td>{noOfItems}</td>
+              </tr>
+              <tr>
+                <td>Item Total</td>
+                <td>₹{cartTotal}</td>
+              </tr>
+              <tr>
+                <td>
+                  <span>
+                    Govt Taxes & Other Charges <em>(5%)</em>
+                  </span>
+                </td>
+                <td>₹{(cartTotal * 0.03).toFixed(2)}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr style={{ fontWeight: "600" }}>
+                <td>TO PAY</td>
+                <td>₹{toPay}</td>
+              </tr>
+            </tfoot>
+          </Table>
+        </aside>
+      </section>
+    </div>
+  );
+};
+
+export default Cart;
